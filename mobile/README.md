@@ -10,9 +10,27 @@ Install the root workspace dependencies and start the loopback API using the roo
 | --- | --- | --- |
 | iOS Simulator | http://127.0.0.1:4321 | Set EXPO_PUBLIC_ENABLE_LOCAL_AUTH=1. Sign in with the participant token in the root developer access file. |
 | Android Emulator | http://10.0.2.2:4321 | Same explicit development mode and participant token. |
+| Physical Android over USB | http://127.0.0.1:4321 | Use ADB reverse for the API. Set EXPO_PUBLIC_ENABLE_LOCAL_AUTH=1 and use the locally generated participant token. |
 | Hosted | HTTPS API base. For Edge Functions include the full functions/v1/api prefix. | Set `EXPO_PUBLIC_FIREBASE_API_KEY`, `EXPO_PUBLIC_FIREBASE_PROJECT_ID`, `EXPO_PUBLIC_FIREBASE_APP_ID`, and the Supabase Edge ingress publishable key. Sign in with your Firebase email and password. |
 
 Start Metro with `pnpm --filter @levelmaxing/mobile dev` from the repository root. A native Expo **development build** with SQLCipher and the backup-excluded storage module is required. The Expo Go binary cannot use these paths. Local mode is checked in development only and expects a loopback API. Use synthetic records with the local API. Native provisioning, development signing and any environment setup that could apply schemas remain owner tasks.
+
+### Physical Android over USB
+
+Use the Android SDK platform-tools and a compatible JDK and Android SDK. Enable USB debugging, unlock the phone, and accept the computer's debugging prompt. Confirm that `adb devices` lists the phone as `device`. Select the target explicitly if more than one device is connected.
+
+From the repository root, install frozen dependencies, run `pnpm dev:setup`, and leave `pnpm dev:api` running. Check that `http://127.0.0.1:4321/healthz` returns `200`. In a second PowerShell window run the commands below. Use `adb -s <serial>` instead of `adb` if several devices are attached.
+
+```powershell
+adb reverse tcp:4321 tcp:4321
+adb reverse tcp:8081 tcp:8081
+adb reverse --list
+$env:EXPO_PUBLIC_API_URL = 'http://127.0.0.1:4321'
+$env:EXPO_PUBLIC_ENABLE_LOCAL_AUTH = '1'
+pnpm --filter @levelmaxing/mobile exec expo run:android --device
+```
+
+The first development build may generate native project files. Keep generated files and test credentials out of commits. Use the development participant token from `.local/access.env` without printing it in logs. For S01, tap Continue on the first two setup pages, force-stop, reopen, and verify the next page and saved fields. Finish setup, sign out, sign in as the second account, and verify the first account's answers are absent. Then use the same participant account on two installations for the S02 workout and meal checks. [Expo local Android setup](https://docs.expo.dev/get-started/set-up-your-environment/?buildEnv=local&mode=development-build)
 
 To exercise the native journey with synthetic data, sign in and finish onboarding. Activate a program, start a workout, log a set and finish the session. Add a food entry or log one portion of a recipe. Record a weigh-in and today’s check-in. Use **Sync now** in Settings on both installations to compare the same account. Make a change while offline and sync after reconnecting. **More** opens workspace recovery when edits compete. Independent food and journal changes can be combined. Edits to the same record still need a choice. Starting a fresh local API process clears its server memory and can also trigger version review. Weight uses its existing cursor and epoch recovery.
 

@@ -1,4 +1,5 @@
 import type { LoggedSet, PlanExercise, Program, TrainingData, TrainingDay, Workout } from '@levelmaxing/contracts';
+import { dateKey, fromDateKey, selectedDate } from '../../shared/local-date.ts';
 
 export const MAX_PROGRAMS = 100;
 export const MAX_DAYS = 30;
@@ -300,8 +301,40 @@ export function updatePastSet(data: TrainingData, workoutId: string, exerciseId:
   return { ...data, history: data.history.map((item) => item.id === workoutId ? corrected : item) };
 }
 
+export function correctWorkoutDate(data: TrainingData, workoutId: string, expectedFinish: string, input: string, now: Date): TrainingData {
+  const day = selectedDate(input.trim(), '');
+  if (!day || day > dateKey(now)) throw new Error('Enter a valid date that is today or earlier.');
+  const target = data.history.find(({ id }) => id === workoutId);
+  if (!target?.finishedAt || target.finishedAt !== expectedFinish) {
+    throw new Error('The workout date changed. Close the editor and try again.');
+  }
+  const finish = new Date(target.finishedAt);
+  if (dateKey(finish) === day) return data;
+
+  const nextFinish = fromDateKey(day);
+  nextFinish.setHours(finish.getHours(), finish.getMinutes(), finish.getSeconds(), finish.getMilliseconds());
+  if (dateKey(nextFinish) !== day) throw new Error('The original finish time is unavailable on that date.');
+  const end = Math.min(nextFinish.valueOf(), now.valueOf());
+  const duration = Math.max(0, finish.valueOf() - Date.parse(target.startedAt));
+  const startedAt = new Date(end - duration).toISOString();
+  if (startedAt.length !== 24) throw new Error('This date is outside the supported range for the workout.');
+  const corrected = { ...target, startedAt, finishedAt: new Date(end).toISOString() };
+  const history = data.history.map((item) => item.id === workoutId ? corrected : item);
+  history.sort((left, right) => (right.finishedAt ?? right.startedAt).localeCompare(left.finishedAt ?? left.startedAt));
+  return { ...data, history };
+}
+
 export function formatClock(seconds: number): string {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+}
+
+export const workoutShareFields = ['name', 'date', 'duration', 'sets', 'volume'] as const;
+export type WorkoutShareField = typeof workoutShareFields[number];
+
+export function workoutShareContent(details: Record<WorkoutShareField, string>, selected: ReadonlySet<WorkoutShareField>) {
+  const fields = workoutShareFields.filter((field) => selected.has(field));
+  if (!fields.length) return;
+  return { title: selected.has('name') ? details.name : 'Workout summary', message: fields.map((field) => details[field]).join('\n') };
 }
 
 function activeWorkout(data: TrainingData): Workout {

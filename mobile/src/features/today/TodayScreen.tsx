@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Action, Card, Mascot, Notice, Pill, ProgressBar, Screen, SectionTitle, useTheme } from '../../shared/ui.tsx';
 import { formatWeight, todayLocal, useProgress } from '../progress/index.ts';
 import { useWorkspace } from '../workspace/index.ts';
+import { TodayCalendar } from './TodayCalendar.tsx';
 
 const number = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
 
@@ -10,10 +11,13 @@ export function TodayScreen() {
   const colors = useTheme();
   const router = useRouter();
   const profile = useWorkspace('profile').value;
-  const training = useWorkspace('training').value;
+  const trainingWorkspace = useWorkspace('training');
+  const training = trainingWorkspace.value;
   const nutrition = useWorkspace('nutrition');
-  const journal = useWorkspace('journal').value;
-  const { entries } = useProgress();
+  const journalWorkspace = useWorkspace('journal');
+  const journal = journalWorkspace.value;
+  const { entries, availability } = useProgress();
+  const workspaceStatuses = [trainingWorkspace.status, nutrition.status, journalWorkspace.status];
   const now = new Date();
   const date = todayLocal(now);
   const weekday = now.getDay();
@@ -97,6 +101,11 @@ export function TodayScreen() {
       </>}
       <Action title="Open food diary" subtle onPress={() => router.push('/nutrition')} />
     </Card>
+
+    <TodayCalendar training={training} nutrition={nutrition.value} journal={journal} weights={entries}
+      loading={workspaceStatuses.includes('loading') || availability === 'opening'}
+      incomplete={workspaceStatuses.includes('unavailable') || availability === 'failed'}
+      onDiary={(date) => router.push({ pathname: '/nutrition', params: { date } })} />
 
     <SectionTitle>Daily check-in</SectionTitle>
     <DailyCard title={checkedToday ? 'Check-in logged' : 'How are you feeling?'} detail="Review energy, hunger, and sleep"

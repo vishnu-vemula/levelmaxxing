@@ -1,13 +1,26 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { parseWorkspaceValue } from '@levelmaxing/contracts';
+import { dateKey } from '../../shared/local-date.ts';
 import {
-  changeRest, dayForToday, deleteProgram, displayLoad, duplicateProgram, emptyTraining, finishWorkout, makeProgram, parseLoad, parseReps,
+  changeRest, correctWorkoutDate, dayForToday, deleteProgram, displayLoad, duplicateProgram, emptyTraining, finishWorkout, makeProgram, parseLoad, parseReps,
   removeWorkoutLog, restRemaining, saveProgram, setWorkoutExercise, setWorkoutLog, starterRoutines, startWorkout,
-  updatePastSet, workoutTotals,
+  updatePastSet, workoutShareContent, workoutTotals,
 } from './model.ts';
 
 const start = Date.parse('2026-02-16T08:30:00.000Z');
+
+test('workout recap excludes every unselected field, including the workout name in share metadata', () => {
+  const details = { name: 'Private routine', date: '16 Feb 2026', duration: '3:00', sets: '1 set', volume: '225 kg lifted' };
+  assert.equal(workoutShareContent(details, new Set()), undefined);
+  assert.deepEqual(workoutShareContent(details, new Set(['sets'])), { title: 'Workout summary', message: '1 set' });
+  assert.deepEqual(workoutShareContent(details, new Set(['volume', 'duration'])), {
+    title: 'Workout summary', message: '3:00\n225 kg lifted',
+  });
+  assert.deepEqual(workoutShareContent(details, new Set(['name', 'date'])), {
+    title: 'Private routine', message: 'Private routine\n16 Feb 2026',
+  });
+});
 
 function fixture() {
   let sequence = 0;
@@ -20,6 +33,33 @@ function fixture() {
   const data = saveProgram(emptyTraining, program);
   return { createId, program, data, day, exercise };
 }
+
+test('correcting the local date preserves duration and sets, reorders history and round-trips through v1', () => {
+  const { createId, data, program, day, exercise } = fixture();
+  const finish = +new Date(2026, 2, 10, 0, 15);
+  const started = startWorkout(data, program.id, day.id, createId(), finish - 3_600_000);
+  const logged = setWorkoutLog(started, exercise.id, { id: createId(), reps: 9, grams: 25_000 }, finish - 600_000);
+  const finished = finishWorkout(logged, logged.session!.id, finish);
+  const original = finished.history[0]!;
+  const other = { ...original, id: createId(), startedAt: new Date(2026, 2, 9, 10).toISOString(),
+    finishedAt: new Date(2026, 2, 9, 11).toISOString() };
+  const training = { ...finished, history: [original, other] };
+  const now = new Date(2026, 2, 11, 14);
+  const next = correctWorkoutDate(training, original.id, original.finishedAt!, '2026-03-08', now);
+  const [first, moved] = next.history;
+  assert.equal(first, other);
+  assert.ok(moved?.finishedAt);
+  assert.equal(moved.id, original.id);
+  assert.equal(dateKey(new Date(moved.finishedAt)), '2026-03-08');
+  assert.equal(dateKey(new Date(moved.startedAt)), '2026-03-07');
+  assert.equal(moved.exercises, original.exercises);
+  assert.deepEqual(workoutTotals(moved, +now), workoutTotals(original, +now));
+  assert.deepEqual(parseWorkspaceValue('training', JSON.parse(JSON.stringify(next))), next);
+  assert.equal(correctWorkoutDate(next, moved.id, moved.finishedAt, '2026-03-08', now), next);
+  assert.throws(() => correctWorkoutDate(next, moved.id, original.finishedAt!, '2026-03-07', now), /changed/);
+  assert.throws(() => correctWorkoutDate(training, original.id, original.finishedAt!, '2026-02-29', now), /valid date/);
+  assert.throws(() => correctWorkoutDate(training, original.id, original.finishedAt!, '2026-03-12', now), /today or earlier/);
+});
 
 test('program creation selects the first program, validates entry, and copies without reusing identities', () => {
   const { createId, data, program, day } = fixture();

@@ -32,5 +32,6 @@ export function useNutritionSave(save: (value: NutritionData) => Promise<void>) 
 const knownFailureMessages = new Set([
   'This entry contains values outside the supported range.',
   'This section is full. Remove older entries before adding more.',
+  'This section changed while you were editing. Review the latest values before saving again.',
   'Device storage is unavailable. Open the app again to retry.',
 ]);

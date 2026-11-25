@@ -3,11 +3,13 @@ import { randomUUID } from 'expo-crypto';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { dateKey } from '../../shared/local-date.ts';
 import { useWorkspace } from '../workspace/index.ts';
 import { Action, Card, Field, Notice, Pill, ProgressBar, Screen, SectionTitle, useTheme } from '../../shared/ui.tsx';
 import {
-  changeRest, displayLoad, emptyTraining, finishWorkout, formatClock, MAX_SETS, parseLoad, parseReps,
-  removeWorkoutLog, restRemaining, setWorkoutExercise, setWorkoutLog, updatePastSet, workoutTotals, type WeightUnit,
+  changeRest, correctWorkoutDate, displayLoad, emptyTraining, finishWorkout, formatClock, MAX_SETS, parseLoad, parseReps,
+  removeWorkoutLog, restRemaining, setWorkoutExercise, setWorkoutLog, updatePastSet, workoutShareContent, workoutShareFields,
+  workoutTotals, type WeightUnit, type WorkoutShareField,
 } from './model.ts';
 import {
   SaveError, SwapExercise, TrainingCopy, TrainingHeading, TrainingHero, TrainingLink, TrainingSyncStatus, trainingStyles,
@@ -58,8 +60,9 @@ export function WorkoutScreen() {
     setError('');
   }
 
-  if (selected) return <WorkoutSummary workout={selected} unit={unit} disabled={busy} error={error} onBack={showHistory}
+  if (selected) return <WorkoutSummary key={selected.id} workout={selected} unit={unit} disabled={busy} error={error} onBack={showHistory}
     onCorrect={(exerciseId, set) => perform(() => save(updatePastSet(value, selected.id, exerciseId, set)))}
+    onDateChange={(expectedFinish, date) => perform(() => save(correctWorkoutDate(value, selected.id, expectedFinish, date, new Date())))}
     onDelete={() => {
       void perform(async () => {
         await save({ ...value, history: value.history.filter(({ id }) => id !== selected.id) });
@@ -333,28 +336,48 @@ function WorkoutHistoryRow({ workout, sets, onPress }: { workout: Workout; sets:
   </Card>;
 }
 
-function WorkoutSummary({ workout, unit, disabled, error, onBack, onCorrect, onDelete }: {
+const workoutShareLabels = { name: 'Workout name', date: 'Date', duration: 'Duration', sets: 'Sets', volume: 'Volume' };
+
+function WorkoutSummary({ workout, unit, disabled, error, onBack, onCorrect, onDateChange, onDelete }: {
   workout: Workout; unit: WeightUnit; disabled: boolean; error: string; onBack: () => void;
-  onCorrect: (exerciseId: string, set: LoggedSet) => Promise<boolean>; onDelete: () => void;
+  onCorrect: (exerciseId: string, set: LoggedSet) => Promise<boolean>;
+  onDateChange: (expectedFinish: string, date: string) => Promise<boolean>; onDelete: () => void;
 }) {
   const [correcting, setCorrecting] = useState(false);
+  const [dateEdit, setDateEdit] = useState<{ date: string; expectedFinish: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [shareFields, setShareFields] = useState<Set<WorkoutShareField> | null>(null);
+  const [sharing, setSharing] = useState(false);
   const [shareError, setShareError] = useState('');
+  const openingShare = useRef(false);
   const totals = workoutTotals(workout, Date.now());
-  const stats = `${formatClock(totals.seconds)} · ${totals.sets} sets · ${displayLoad(totals.volume, unit).toLocaleString()} ${unit} lifted`;
   const date = displayDate(workout.finishedAt ?? workout.startedAt);
+  const details = {
+    name: workout.name, date, duration: formatClock(totals.seconds), sets: `${totals.sets} ${totals.sets === 1 ? 'set' : 'sets'}`,
+    volume: `${displayLoad(totals.volume, unit).toLocaleString()} ${unit} lifted`,
+  };
+  const stats = `${details.duration} · ${details.sets} · ${details.volume}`;
+  const shareContent = shareFields && workoutShareContent(details, shareFields);
+
   async function share() {
+    if (!shareContent || openingShare.current) return;
+    openingShare.current = true;
+    setSharing(true);
     setShareError('');
     try {
-      await Share.share({ title: workout.name, message: `${workout.name} · ${date}\n${stats}` });
+      await Share.share(shareContent);
+      setShareFields(null);
     } catch {
       setShareError('The workout could not be shared. Try again.');
+    } finally {
+      openingShare.current = false;
+      setSharing(false);
     }
   }
 
   return <Screen title="Workout recap" detail={date}>
     <TrainingSyncStatus />
-    {(error || shareError) ? <SaveError message={error || shareError} /> : null}
+    {error && <SaveError message={error} />}
     <TrainingHero label="Workout saved" title={workout.name} detail={stats} />
     <SectionTitle>Logged exercises</SectionTitle>
     {workout.exercises.filter((exercise) => exercise.logged.length > 0).map((exercise) => <Card key={exercise.id}>
@@ -369,12 +392,40 @@ function WorkoutSummary({ workout, unit, disabled, error, onBack, onCorrect, onD
       <TrainingCopy>It will be removed from your history and synced devices.</TrainingCopy>
       <Action title="Delete workout" tone="accent" disabled={disabled} onPress={onDelete} />
       <Action title="Keep workout" subtle disabled={disabled} onPress={() => setConfirmDelete(false)} />
+    </Card> : dateEdit ? <Card>
+      <SectionTitle>Correct workout date</SectionTitle>
+      <TrainingCopy>Originally logged on {displayDate(dateEdit.expectedFinish)}. Saving moves this workout and its sets to the selected date in History and Progress.</TrainingCopy>
+      <Field label="Workout date (YYYY-MM-DD)" value={dateEdit.date} maxLength={10} editable={!disabled}
+        onChangeText={(date) => setDateEdit({ ...dateEdit, date })} />
+      <Action title="Save workout date" disabled={disabled || !dateEdit.date.trim()} onPress={() => {
+        void onDateChange(dateEdit.expectedFinish, dateEdit.date).then((saved) => { if (saved) setDateEdit(null); });
+      }} />
+      <Action title="Cancel date change" subtle disabled={disabled} onPress={() => setDateEdit(null)} />
+    </Card> : shareFields ? <Card>
+      <SectionTitle>Choose what to share</SectionTitle>
+      <View style={trainingStyles.wrap}>
+        {workoutShareFields.map((field) => <Pill key={field} label={workoutShareLabels[field]}
+          selected={shareFields.has(field)} disabled={sharing} onPress={() => setShareFields((previous) => {
+            if (!previous) return null;
+            const next = new Set(previous);
+            if (next.has(field)) next.delete(field);
+            else next.add(field);
+            return next;
+          })} />)}
+      </View>
+      {shareContent && <TrainingCopy>{shareContent.message}</TrainingCopy>}
+      {shareError && <SaveError message={shareError} />}
+      <Action title="Open share sheet" onPress={() => { void share(); }} disabled={disabled || sharing || !shareContent} />
+      <Action title="Cancel sharing" onPress={() => { setShareError(''); setShareFields(null); }} subtle disabled={sharing} />
     </Card> : <>
       <Action title={correcting ? 'Done editing' : 'Correct logged sets'} onPress={() => setCorrecting(!correcting)} subtle disabled={disabled} />
-      <Action title="Share workout summary" onPress={() => { void share(); }} subtle disabled={disabled} />
+      {workout.finishedAt && <Action title="Correct workout date" subtle disabled={disabled || correcting} onPress={() => {
+        if (workout.finishedAt) setDateEdit({ date: dateKey(new Date(workout.finishedAt)), expectedFinish: workout.finishedAt });
+      }} />}
+      <Action title="Share workout summary" onPress={() => setShareFields(new Set())} subtle disabled={disabled || correcting} />
       <TrainingLink title="Delete workout" disabled={disabled} onPress={() => setConfirmDelete(true)} />
     </>}
-    <Action title="Back to workout history" onPress={onBack} subtle disabled={disabled} />
+    <Action title="Back to workout history" onPress={onBack} subtle disabled={disabled || sharing} />
   </Screen>;
 }
 

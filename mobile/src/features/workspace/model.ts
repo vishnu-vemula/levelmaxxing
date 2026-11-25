@@ -1,5 +1,5 @@
 import {
-  isUuid, objectValue, parseWorkspaceSave, parseWorkspaceSnapshot, parseWorkspaceValue, WORKSPACE_MAX_BYTES,
+  isUuid, objectValue, parseWorkspaceCheckedSaveRequest, parseWorkspaceSave, parseWorkspaceSnapshot, parseWorkspaceValue, WORKSPACE_MAX_BYTES,
   workspaceSections, type WorkspaceSave, type WorkspaceSaveResult, type WorkspaceSection,
   type WorkspaceSnapshot, type WorkspaceValues,
 } from '@levelmaxing/contracts';
@@ -12,6 +12,7 @@ export type Replica = {
   base: WorkspaceSnapshot;
   local: WorkspaceValues[WorkspaceSection] | null;
   pending: WorkspaceSave | null;
+  pendingKnown?: string;
   conflict: WorkspaceSnapshot | null;
 };
 export type WorkspaceView = { replica: Replica; status: WorkspaceStatus };
@@ -22,7 +23,9 @@ export interface WorkspaceStore {
 }
 export interface WorkspaceTransport {
   read(section: WorkspaceSection, signal: AbortSignal): Promise<WorkspaceSnapshot>;
-  save(command: WorkspaceSave, signal: AbortSignal, base?: WorkspaceSnapshot): Promise<WorkspaceSaveResult>;
+  save(command: WorkspaceSave, signal: AbortSignal, base?: WorkspaceSnapshot, check?: {
+    known?: string; persist(known: string): Promise<string>;
+  }): Promise<WorkspaceSaveResult>;
 }
 
 const emptyBase: WorkspaceSnapshot = { version: 0, value: null };
@@ -39,6 +42,11 @@ export function decodeReplica(section: WorkspaceSection, input: unknown): Replic
   if (pending && (pending.section !== section || pending.expect !== base.version || local === null || conflict)) return;
   if (conflict && local === null) return;
   if (!pending && !conflict && !sameWorkspaceValue(base.value, local)) return;
+  if (raw.pendingKnown !== undefined) {
+    const checked = pending && parseWorkspaceCheckedSaveRequest({ command: pending, known: raw.pendingKnown });
+    if (!checked) return;
+    return { base, local, pending, conflict, pendingKnown: checked.known };
+  }
   return { base, local, pending, conflict };
 }
 
@@ -130,7 +138,8 @@ export class WorkspaceController {
     this.syncAll();
   }
 
-  async save<K extends WorkspaceSection>(section: K, input: WorkspaceValues[K], expectedLocal?: WorkspaceValues[K] | null) {
+  async save<K extends WorkspaceSection>(section: K, input: WorkspaceValues[K], expectedLocal?: WorkspaceValues[K] | null,
+    options?: { requireNoConflict: boolean }) {
     const normalized = parseWorkspaceValue(section, input);
     if (!normalized) throw new Error('This entry contains values outside the supported range.');
     // Take a snapshot before the async write so UI edits cannot change an outbox entry.
@@ -139,6 +148,9 @@ export class WorkspaceController {
       const { replica, status } = this.view(section);
       if (!this.store || this.closed || status === 'loading' || status === 'unavailable') {
         throw new Error('Device storage is unavailable. Open the app again to retry.');
+      }
+      if (options?.requireNoConflict && replica.conflict) {
+        throw new Error('Resolve the sync conflict before saving this section.');
       }
       if (sameWorkspaceValue(replica.local, local)) return;
       if (expectedLocal !== undefined && !sameWorkspaceValue(replica.local, expectedLocal)) {
@@ -188,7 +200,22 @@ export class WorkspaceController {
     let more = false;
     this.publish(section, initial.replica, 'syncing');
     try {
-      const response = pending ? await transport.save(pending, request.signal, initial.replica.base) : null;
+      const response = pending ? await transport.save(pending, request.signal, initial.replica.base, {
+        known: initial.replica.pendingKnown,
+        persist: (known) => this.serialize(async () => {
+          const { replica } = this.view(section);
+          if (!isActive() || !this.store || replica.pending?.operationId !== pending.operationId) {
+            throw new Error('The workspace write was interrupted.');
+          }
+          if (replica.pendingKnown !== undefined) return replica.pendingKnown;
+          // Persist the conditional envelope before sending the operation. After a lost receipt,
+          // the server may already have replaced the tag and cannot supply it again.
+          const frozen = { ...replica, pendingKnown: known };
+          await this.store.write(section, frozen);
+          this.publish(section, frozen, this.view(section).status);
+          return known;
+        }),
+      }) : null;
       const snapshot = response?.snapshot ?? await transport.read(section, request.signal);
       if (pending && response?.outcome === 'applied' &&
         (snapshot.version !== pending.expect + 1 || !sameWorkspaceValue(snapshot.value, pending.value))) {
@@ -201,7 +228,7 @@ export class WorkspaceController {
         if (pending) {
           if (replica.pending?.operationId !== pending.operationId) return;
           if (response?.outcome === 'conflict') {
-            next = { ...replica, pending: null, conflict: snapshot };
+            next = { base: replica.base, local: replica.local, pending: null, conflict: snapshot };
           } else {
             const queued = replica.local && !sameWorkspaceValue(replica.local, pending.value)
               ? newCommand(section, snapshot.version, replica.local, this.createId()) : null;

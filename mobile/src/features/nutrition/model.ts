@@ -1,4 +1,7 @@
-import type { FoodLog, Grocery, MacroAmount, Recipe } from '@levelmaxing/contracts';
+import type { FoodLog, Grocery, MacroAmount, NutritionData, Recipe } from '@levelmaxing/contracts';
+import { dateKey, fromDateKey, selectedDate } from '../../shared/local-date.ts';
+
+export { dateKey, selectedDate };
 
 export const mealNames = ['Breakfast', 'Lunch', 'Dinner', 'Snack'] as const;
 export const macroKeys = ['calories', 'protein', 'carbs', 'fat'] as const;
@@ -9,23 +12,6 @@ const amountFormat = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2
 
 export function mealName(value?: string): MealName {
   return mealNames.find((meal) => meal === value) ?? 'Snack';
-}
-
-export function dateKey(date = new Date()): string {
-  return [date.getFullYear().toString().padStart(4, '0'), (date.getMonth() + 1).toString().padStart(2, '0'),
-    date.getDate().toString().padStart(2, '0')].join('-');
-}
-
-function fromDateKey(value: string): Date {
-  const date = new Date(2000, 0, 1, 12);
-  const [year = 2000, month = 1, day = 1] = value.split('-').map(Number);
-  date.setFullYear(year, month - 1, day);
-  return date;
-}
-
-export function selectedDate(value: unknown, fallback = dateKey()): string {
-  if (typeof value !== 'string' || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value) || value.startsWith('0000')) return fallback;
-  return dateKey(fromDateKey(value)) === value ? value : fallback;
 }
 
 export function shiftDate(value: string, days: number): string {
@@ -141,6 +127,15 @@ export function foodGroups(rows: readonly FoodLog[], date: string) {
     if (row.date === date) groups[row.meal].push(row);
   }
   return groups;
+}
+
+export function copyFoodLogs(value: NutritionData, selected: readonly FoodLog[], { date, meal }: { date: string; meal: MealName },
+  createId: () => string): NutritionData | undefined {
+  if (!selected.length || !selectedDate(date, '') || !mealNames.includes(meal)) return;
+  const current = new Map(value.meals.map((entry) => [entry.id, entry]));
+  if (!selected.every((entry) => sameFoodLog(entry, current.get(entry.id)))) return;
+  const copies = selected.map((entry) => ({ ...entry, date, meal, id: createId(), macros: { ...entry.macros } }));
+  return { ...value, meals: [...value.meals, ...copies] };
 }
 
 export function recentFoods(rows: readonly FoodLog[], query: string, count = 12): FoodLog[] {

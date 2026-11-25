@@ -47,7 +47,7 @@ export function useWorkspace<K extends WorkspaceSection>(section: K) {
     value,
     version: current.replica.base.version,
     status: current.status,
-    save: (next: WorkspaceValues[K]) => controller.save(section, next, value),
+    save: (next: WorkspaceValues[K], options?: { requireNoConflict: boolean }) => controller.save(section, next, value, options),
     canCombine: () => current.status === 'conflict' && Boolean(combineWorkspaceChanges(section, current.replica.base, value, current.replica.conflict)),
     resolve: (choice: ResolutionChoice) => controller.resolve(section, choice),
     retry: controller.syncAll,

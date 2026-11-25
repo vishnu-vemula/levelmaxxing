@@ -75,7 +75,7 @@ India's published data-protection rules and commencement documents are inputs fo
 
 ## Dependency-aware build board
 
-**State.** All production cards below are Draft. G1–G5 are Awaiting Human for production authority or evidence. Apply each gate to the named dependency of the card. Test-environment approval can unlock S01 before the eventual G5 public release approval. The owner starts implementation in the chosen repository. Draft can become Ready when prerequisites and authorization are satisfied, then Active, Verifying, and Completed after evidence. Prototype results can inform the cards. Each row pairs app or operator UI, its authoritative state, and the discriminating test. Reverse dependencies are listed in the Blocks column.
+**State.** S01 and S02 are in implementation and verification. Later production cards retain Draft acceptance status. G1–G5 await production authority or evidence. Test-environment access can unlock S01 before the final G5 release signoff. A card moves from Draft to Ready after its prerequisites are satisfied, then Active, Verifying and Completed as evidence becomes available. Reverse dependencies are listed in the Blocks column. The [delivery ledger](../engineering/delivery-status.md) records observed results.
 
 | Card | Depends on | Blocks | Requirement and acceptance |
 | --- | --- | --- | --- |
@@ -103,7 +103,47 @@ India's published data-protection rules and commencement documents are inputs fo
 
 **Execution mode.** Authorized implementation and bounded synthetic tests can proceed autonomously as cards reach Ready. G1–G5 decisions, real credentials, media rights, privileged environment operations, purchase configuration and release signoff are human checkpoints. If a provider is blocked, keep its row open and finish independent eligible work. Checkpoint the card, changed files, observed outputs, blocker and exact resume condition. A feature flag can protect a rollout cohort. It does not turn an unverified requirement into a completed feature.
 
-**Next card after repository selection.** Start S01 and the compatible contracts required by S02. S02 is the earliest two-platform demonstration of the hardest data risk and reduces rework for all write paths. Run camera, watchOS, Health Connect and billing feasibility checks against approved hardware/environments while the first foundations are built. Editorial licensing and content production can begin independently under G2. Move through the remainder until every release group has evidence.
+## Release execution
+
+Start at S01 on Android. Recover a partly completed profile, then prove S02 with a workout set and a manual meal on two installations. Bring iOS into the same account and sync matrix. Complete the remaining S01 and S02 acceptance before opening dependent production cards. The [delivery ledger](../engineering/delivery-status.md) records checkout evidence, failures and resume conditions. Later production cards retain Draft acceptance status until their upstream dependencies and gates are met.
+
+### Decisions and prerequisites
+
+| ID | Decision or prerequisite | State and verification | Blocks |
+| --- | --- | --- | --- |
+| E01 | Use the Android device for first native acceptance and the existing loopback development API with synthetic records. Keep the v1 wire contract and account-scoped encrypted store. | Confirmed implementation direction. Physical execution is blocked until the runner can install frozen dependencies, make localhost TCP connections, and list the USB device as `device` through ADB. Verify the host's `/healthz` and the app's authenticated session on the phone. | S01-B, S02-B |
+| E02 | Use an isolated hosted Firebase and Supabase staging pair. | Awaiting owner-provisioned project, applied and reviewed schema, HTTPS test endpoint, two synthetic participant identities and a TOTP operator. The runner can exercise app endpoints and roles after staging is supplied. Schema application and destructive restore and erasure drills are owner-operated. | S01-C, S02-B, S10, S17, S20, S21 |
+| E03 | Exercise iOS on a Mac with Xcode and a physical iPhone. Pair the Watch for the companion journey. Select a supported Health Connect device for Android platform coverage. | Awaiting hardware and development signing access. Verify exact target, OS, app build and required capabilities against V04 for the actual device matrix. | S01-C, S02-B, S07, S15, S16, S19, S21 |
+| E04 | Use approved content, catalog, OCR, AI, Strava and retailer integrations in test mode where applicable. | Awaiting provider, licensing, editorial and domain decisions under G2–G4. Each integration needs a representative fixture set and a known allowed test budget where usage incurs cost. | S05–S11, S13–S15, S18, S21 |
+| E05 | Use Play and App Store test products, sandbox testers and a separate release candidate. | Awaiting store ownership and approved product IDs, entitlement rules and test environments. Capture purchase, restore, refund, grace, account-switch and duplicate notification outcomes. | S17, S20, S21 |
+
+First-device testing assumes the attached Android phone supports the development build. Confirm on the installed build, including SQLCipher startup. If USB or the device is unavailable, continue handler and model checks. An emulator can verify a second logical installation before the physical matrix. India-first, English/Hindi launch and provider choices remain proposed under G1–G4. Production procedures and signoff follow G5.
+
+### First executable cards
+
+| Card | State and mode | Depends on | Blocks | Acceptance and evidence |
+| --- | --- | --- | --- | --- |
+| S01-A · Resume unfinished setup | Verifying. Autonomous on synthetic fixtures. | Existing profile and workspace contracts | S01-B, S01-C | Continue saves each validated setup step through the account workspace. Reopen after a saved page, resume at the next unfinished step and finish with the same profile. Reject invalid input and require resolution of a stale conflicting draft. Another account sees none of the answers. Exercise model tests and `scripts/onboarding-journey.test.ts`. |
+| S01-B · Recover setup on Android | Blocked. Autonomous after E01 is available. | S01-A, E01 | S02-B | Install on the connected phone with the [USB development setup](../../mobile/README.md). Sign in with synthetic accounts, force-stop after Continue and reopen, complete setup, sign out and switch accounts. Inspect the local session response, visible setup values, isolation and accessible navigation. |
+| S01-C · Recover the same account on both platforms | Awaiting environment. Mixed. | S01-A, S01-B, E02, E03 | S02-B, S10, S17, S20 | Verify real Firebase account creation and recovery, first binding, a preference synced to both phones, expired and wrong-project tokens, disabled users, and role denial against staging. Record sanitized status and post-state under V01 and V04. |
+| S01-D · Keep calendar preferences across devices | Draft. Mixed. | S01-C, G1 | S01 completion, S19 | Let a participant choose the supported locale, week start and time zone. Sync the selected values and verify that both clients group dates consistently while earlier clients keep working. |
+| S01-E · Revoke a linked device | Draft. Mixed. | S01-C, G5 | S01 completion, S02-B | Let a participant review and revoke a linked device. Exercise authorization, token expiry, revoked-device writes and preserved recovery of pending changes on the authorized device. |
+| S02-A · Reopen and replay a workout set and manual meal | Verifying. Autonomous on synthetic fixtures. | Existing account workspace and real request handler used by S01-A | S02-B | Record offline, reopen, drop a successful checked-save receipt, reopen again, retry the same request body, and get one record with the same IDs and values on the second client. A third account sees neither record. Exercise `scripts/workspace-journey.test.ts`. |
+| S02-B · Prove native cross-device durability | Blocked. Mixed. | S01-B, S01-C, S01-E, S02-A, E01–E03 | S02 completion, S03, S06, S12, S15 | Use the built apps and isolated API. Repeat V01 with offline restart, duplicate retries, same-record conflicts, independent edits, delete versus update, restored server state and account switch. Verify the SQLCipher store and check pending changes from a previous supported build before closing. |
+
+S01 production acceptance includes S01-A through S01-E. The small S02-A regression can run before S01 production acceptance because it exercises the existing synthetic account boundary. For S02-B, the current snapshot limits and archive contract remain part of the compatibility matrix. Add record-scoped persistence only against an explicit compatibility and owner-reviewed staging contract. Keep delete-versus-update and recovery requirements open until they pass against the actual target design.
+
+### Delivery order after core sync
+
+| Delivery milestone | Production cards | Exit evidence |
+| --- | --- | --- |
+| Manual tracking and historical integrity | S03, S04, S06, S12 | A plan becomes an actual recorded workout, a manual or catalog food becomes a verified diary entry, and corrected workout and progress views agree. Existing prescriptions, food snapshots and imported measurements remain consistent under edits and recovery. |
+| Editorial and provider-assisted workflows | S07–S11, S18 | Camera or typing leads to a reviewed food candidate. Corrections, missing data and provider failure preserve the manual path. Versioned recipe, publishing, coach and grocery journeys pass rights, freshness, quality and cost evidence. S10 can start once S01 and G2 are cleared. |
+| Coaching decisions and accessible native use | S05, S13–S16, S19 | Versioned suggestions preserve historical values and require confirmation. Cycle consent and removal are exercised. Native imports, Watch continuity, localized logging and assistive technology pass on the supported matrix. |
+| Commercial and operator readiness | S17, S20 | Sandbox entitlements, scoped export and account rights, failed workflow recovery, redacted audits, backup and restore satisfy V05 and V08. S17 can start after its own dependencies clear. |
+| Release candidate and rollout | S21 | Run V01–V09 against a pinned candidate and previous supported builds as appropriate. Capture store and release artifacts, environment boundaries and support ownership. Owner approves rollout and holds expansion if the agreed health or recovery criteria fail. |
+
+Milestones group related journeys. The dependency columns in the board determine executable order. For each card, record the build revision, approved test environment, device or browser, exact commands and observed result, remaining risk, and next resume condition. Land one coherent increment at a time. Failed platform or staging checks leave the affected card open while independent work continues. Record compatibility and recovery evidence before accepting a slice.
 
 ## Delivery estimates
 

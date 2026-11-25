@@ -94,7 +94,7 @@ export function createWorkspaceTransport(request: ApiRequester): WorkspaceTransp
     });
   }
 
-  const save: WorkspaceTransport['save'] = async (command, signal, base) => {
+  const save: WorkspaceTransport['save'] = async (command, signal, base, check) => {
     const decode = (body: unknown) => parseWorkspaceSaveResult(command.section, body);
     const legacySave = () => request('v1/workspace/save', decode, signal, command);
     if (!base) return legacySave();
@@ -104,13 +104,15 @@ export function createWorkspaceTransport(request: ApiRequester): WorkspaceTransp
     let inspected: WorkspaceSnapshot | undefined;
     let prior = cached.get(command.section);
     if (supportsCheckedSave && supportsBatch) {
-      if (base.version > 0 && (!prior || !matchesBase(prior.snapshot))) {
+      if (check?.known === undefined && base.version > 0 && (!prior || !matchesBase(prior.snapshot))) {
         inspected = await read(command.section, signal);
         prior = cached.get(command.section);
       }
       if (supportsBatch) {
-        const known = base.version === 0 ? WORKSPACE_EMPTY_TAG
-          : prior && matchesBase(prior.snapshot) ? prior.tag : unobservedTag;
+        const derived = check?.known ?? (base.version === 0 ? WORKSPACE_EMPTY_TAG
+          : prior && matchesBase(prior.snapshot) ? prior.tag : unobservedTag);
+        const known = check && check.known === undefined && base.version > 0 ? await check.persist(derived) : derived;
+        if (signal.aborted) throw interrupted();
         try {
           const result = await request('v1/workspace/save-checked',
             (body) => parseWorkspaceCheckedSaveResult(command.section, body), signal, { command, known });

@@ -4,10 +4,10 @@ This ledger tracks the native app against the [full release register](../product
 
 | Requirement | Native app and API | Release work still open |
 |---|---|---|
-| F01 · Identity, onboarding and preferences | Firebase email sign-in, account creation and reset screens, encrypted session vault, verified UID-to-account mapping, four-step onboarding, optional calorie target and kg/lb. | Live Firebase Email/Password and claim provisioning, hosted account binding, revocation and lifecycle acceptance. |
+| F01 · Identity, onboarding and preferences | Firebase email sign-in, account creation and reset screens, encrypted session vault, verified UID-to-account mapping, four-step onboarding, optional calorie target and kg/lb. Today has week and month browsing with diary navigation. | Live Firebase Email/Password and claim provisioning, hosted account binding, revocation, locale and week-start settings, and native calendar acceptance. |
 | F02 · Training programs | Starter and manual programs, exercise edits, weekday schedule, duplication, activation and substitution. | Immutable program versions, future-dated activation, reviewed content and equipment-based recommendations. |
-| F03 · Workout execution | Start and resume, edit sets and load, deadline-based rest timer, substitutions, history, sharing and reversible archive. | Progression proposals, retention approval and verified Watch phone handoff. |
-| F04 · Nutrition diary | Dated entries, editable quantities and meal groups, macro totals, target view, repeat meals and a record-level archive. | Licensed catalog packs, unbounded active logging and hosted archive verification. |
+| F03 · Workout execution | Start and resume, edit sets and load, deadline-based rest timer, substitutions, history, date corrections, field-by-field recap sharing and reversible archive. | Native history and share sheet acceptance, progression proposals, retention approval and verified Watch phone handoff. |
+| F04 · Nutrition diary | Dated entries, editable quantities and meal groups, macro totals, target view, copy individual foods or meals to a chosen date and meal, and a record-level archive. | Native offline copy acceptance, licensed catalog packs, unbounded active logging and hosted archive verification. |
 | F05 · Food input | Manual entry, package label transcription and validated typed barcode matching against personal logs. | Camera scanning, catalog lookup, OCR, photo and plain-text estimation. |
 | F06 · Recipes | Ingredient nutrition, serving calculations, recipe editing, duplicates, sharing and logging portions. | Versioning, secure import and shared recipe access. |
 | F07 · Check-ins | Dated sleep, appetite, energy and notes, history and corrections. | Reviewed coaching rules, proposal acceptance and effective dates. |
@@ -31,6 +31,21 @@ Snapshot writes and validation grow linearly with section size. Active save requ
 
 No database migration, schema synchronization, cloud publication, signing operation, branch operation, commit or push was performed.
 
+## Incremental delivery checkpoint · 25 November 2026
+
+The goal is to complete the [release board](../product/01-release-plan.md) through user-facing increments and record physical-device and service evidence for each. These increments use the existing account workspace and API. Calendar weeks start on Monday, consistent with the diary. Its overview covers active records and the recent weigh-ins already loaded by Progress. Date corrections move a completed workout to the selected local date, preserving the logged sets and elapsed duration. A copy keeps the exact food snapshot and creates new IDs. Shared recap fields start unselected.
+
+| Card and increment | State | Evidence | Blocked by and resume condition | Blocks |
+| --- | --- | --- | --- | --- |
+| S01 / F01 · Browse dates from Today | Verifying | Week/year boundaries, leap-month navigation and date aggregation passed at the model layer. | Install the native build and verify date selection, return to today, large text and diary navigation on Android. Hosted identity and device acceptance still apply to S01. | S02, S10, S17, S20 |
+| S04 / F03 · Correct the date of a completed workout | Verifying | Date validation, stale changes, same-day no-op, elapsed duration, history order, v1 parsing and second-client sync through the API handler passed. | Verify editing, cancellation, History and Progress updates on a native build. S03 and hosted/device requirements still apply to S04. | S05, S13, S16, S19, S21 |
+| S04 / F03 · Share selected recap fields | Verifying | Payload allowlist tests passed. An independent check exercised all 32 field combinations. Set editing keeps its draft until the user exits editing. | Verify the preview and native share sheet with a synthetic workout and dismiss without sharing externally. | S04 acceptance |
+| S06 / F04 · Copy a diary entry or meal | Verifying | Source snapshots, invalid dates, stale entries, independent IDs, offline restart, second-client sync and account isolation passed using the real API handler in-process. | Verify one item and a whole meal from the phone, including an offline restart and target-day totals after reconnect. S02 and approved catalog coverage still apply to S06. | S07, S08, S09, S13, S19 |
+| Physical Android and loopback API | Blocked | The Windows SDK is present. ADB failed to create its server socket. A separate TCP client probe to localhost returned `EACCES`. | Run in a session with a working ADB server, a USB-authorized device, package registry access and loopback TCP. Use the local synthetic API for the first device checks. | Native acceptance above, S02 and subsequent hardware checks |
+| Publish increments to `main` | Blocked | The authorized GitHub integration can read the repository. Creating a Git tree returned HTTP 403. The managed checkout denies write access to its Git index. | Use write access to the authorized checkout and remote, or a GitHub integration with repository Contents write permission. | Publication of these increments |
+
+Nine focused cases passed using Node with cached tooling because the pinned pnpm install could not reach the package registry. The boundary check and TypeScript/TSX transpilation passed. The two client journeys exercised the actual Fetch API handler and injected memory storage. A separate run of all 118 test cases with cached tooling passed 95. Of the 23 failures, 21 reported `EACCES` on loopback connections and two failed assertions in the affected TCP journeys. Live localhost verification, full TypeScript workspace checking, mobile bundling, device installation and hosted acceptance remain open. The immediate release frontier is S01 on the physical phone, then S02 with a second test client and a reachable isolated API. Production work follows the original dependencies and its owner-approved provider, content, privacy and rollout gates.
+
 ## Backend release evidence and dependencies
 
 | Release cards | Observable check | Environment and evidence needed |
@@ -42,3 +57,17 @@ No database migration, schema synchronization, cloud publication, signing operat
 | S15–S16, S19 | Reconnect and deduplicate approved health/native flows and verify accessibility/localization. | Real accounts and supported native hardware are required for Health Connect, HealthKit, Strava, Watch, Live Activities and assistive technology. |
 | S17 | Export committed account records after fresh Firebase authentication. | Loopback and signed-token fixture coverage for export. Store sandbox, end-to-end erasure, retention policy and recovery drills remain open. |
 | S20–S21 | Verify scoped operations and controlled recovery and release. | Owner-provisioned roles, accepted retention/restore drill, supported device matrix and release approval. |
+
+## First release slices · 25 November 2026
+
+The [release execution board](../product/01-release-plan.md#release-execution) links these increments to their native, hosted and provider dependencies. The workspace contract and PostgreSQL schema require no change for either increment.
+
+| Slice | Observed evidence | Still open |
+| --- | --- | --- |
+| S01-A · Recover setup choices | `onboarding.test.ts` and `onboarding-journey.test.ts` verified validated checkpoints, resume after reopening persisted state, use on a second same-account client, an empty profile for a different account, and conflict rejection before a stale save. Finished-profile edits still require a final save. | Physical app startup and account switching must verify SQLCipher storage and route behavior. With no muscle priorities saved, reopening can return to the optional page. Live Firebase binding and roles remain S01-C. |
+| S02-A · Recover workout and meal after receipt loss | `workspace-journey.test.ts` verified real workout actions, manual meal values, two restarts, byte-identical checked-save replay, one result on the second client, third-account isolation, and transport replacement during the durable write. | The tests use captured synthetic inputs, a serialized memory disk and the real request handler in-process. Live TCP, the native disk and hosted PostgreSQL still need S02-B. |
+| E01 · Android test environment | `adb devices -l` failed because the daemon could not start. A separate HTTP client could not connect to a bound loopback server (`EACCES`). The pinned dependency installation cannot resolve registry packages in this session. | Run the [USB device steps](../../mobile/README.md#physical-android-over-usb) from a runner with authorized USB, localhost networking and package access. Keep the test API on loopback. |
+
+Before a non-empty checked write is sent, the controller persists its representation tag beside the existing pending command. This adds one local snapshot write the first time the tag is used for that operation. A replacement connection or restored process reuses it. Acknowledging the operation clears that tag before the next queued command begins. Earlier replicas without a tag remain readable.
+
+The focused suite passed nine tests. The import boundary check and scoped TypeScript check passed. A broader run using cached tooling passed 100 of 123 tests. Twenty-one failures reported the denied localhost connection and two additional assertions failed in affected TCP journeys. Native bundling and installation, hosted verification and the full release remain open.

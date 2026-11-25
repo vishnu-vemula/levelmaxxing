@@ -1,12 +1,34 @@
 import { deepEqual, equal, ok } from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FoodLog, Recipe } from '@levelmaxing/contracts';
-import { codeFromSource, findBarcode, foodGroups, groceryShareText, groceryTotals, labelNutrition, readBarcode, readMacros, readPrice,
+import { codeFromSource, copyFoodLogs, findBarcode, foodGroups, groceryShareText, groceryTotals, labelNutrition, readBarcode, readMacros, readPrice,
   recentFoods, recipePortion, sameFoodLog, sameGrocery, sameRecipe, selectedDate, shiftDate, sumMacros, weekDays } from './model.ts';
 
 const macros = { calories: 180, protein: 16, carbs: 8, fat: 10 };
 const meal: FoodLog = { id: 'log-1', name: 'Yogurt', date: '2026-11-23', meal: 'Breakfast', quantity: 2,
   unit: 'serving', macros, source: 'Package label · 4006381333931' };
+
+test('copying diary entries to a different meal preserves the source and nutrition snapshots', () => {
+  const fruit = { ...meal, id: 'log-2', name: 'Fruit', source: 'Manual' };
+  const value = { meals: [meal, fruit], recipes: [], groceries: [] };
+  const destination = { date: '2028-02-29', meal: 'Dinner' } as const;
+  let id = 2;
+  const next = copyFoodLogs(value, value.meals, destination, () => `log-${++id}`);
+  deepEqual(next?.meals, [meal, fruit, { ...meal, ...destination, id: 'log-3' }, { ...fruit, ...destination, id: 'log-4' }]);
+  deepEqual(value.meals, [meal, fruit]);
+  const destinationEntries = foodGroups(next?.meals ?? [], destination.date).Dinner;
+  deepEqual(sumMacros(destinationEntries.map((entry) => entry.macros)), { calories: 360, protein: 32, carbs: 16, fat: 20 });
+});
+
+test('copying rejects invalid dates and outdated sources before allocating any new IDs', () => {
+  const value = { meals: [meal], recipes: [], groceries: [] };
+  const destination = { date: '2026-11-24', meal: 'Lunch' } as const;
+  const unexpectedId = () => { throw new Error('A rejected copy must not allocate an ID'); };
+  equal(copyFoodLogs(value, [], destination, unexpectedId), undefined);
+  equal(copyFoodLogs(value, [meal], { ...destination, date: '2026-02-29' }, unexpectedId), undefined);
+  equal(copyFoodLogs(value, [{ ...meal, quantity: 3 }], destination, unexpectedId), undefined);
+  equal(copyFoodLogs({ ...value, meals: [] }, [meal], destination, unexpectedId), undefined);
+});
 
 test('diary groups snapshots by local calendar date across month and leap boundaries', () => {
   const rows: FoodLog[] = [meal, { ...meal, id: 'log-2', meal: 'Lunch' }, { ...meal, id: 'log-3', date: '2026-11-24' }];
