@@ -1,0 +1,7 @@
+project_id = "levelmaxing"
+
+[functions.api]
+# Firebase ID tokens are authenticated by the application, including every protected API route.
+verify_jwt = false
+entrypoint = "./functions/api/index.ts"
+import_map = "./functions/api/deno.json"

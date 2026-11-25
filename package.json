@@ -1,0 +1,32 @@
+{
+  "name": "levelmaxing",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@10.28.1",
+  "engines": {
+    "node": ">=24.0.0 <25",
+    "pnpm": "10.28.1"
+  },
+  "scripts": {
+    "dev:setup": "node scripts/create-local-access.mjs",
+    "dev:api": "node --env-file=.local/access.env backend/src/node.ts",
+    "dev:admin": "pnpm --filter @levelmaxing/admin dev",
+    "dev:mobile": "pnpm --filter @levelmaxing/mobile dev",
+    "check": "pnpm check:boundaries && pnpm typecheck && pnpm test",
+    "check:boundaries": "node scripts/check-boundaries.mjs",
+    "typecheck": "tsc -p tsconfig.harness.json && pnpm --recursive --if-present typecheck",
+    "test": "pnpm --recursive --if-present test && node --test \"scripts/*.test.ts\"",
+    "test:operator": "node scripts/operator-browser-check.mjs",
+    "build:admin": "pnpm --filter @levelmaxing/admin build",
+    "test:watch": "swift test --package-path mobile/watch",
+    "bundle:mobile": "pnpm --filter @levelmaxing/mobile bundle",
+    "check:backend": "pnpm --filter @levelmaxing/api typecheck && pnpm --filter @levelmaxing/api test",
+    "check:mobile": "pnpm --filter @levelmaxing/mobile typecheck && pnpm --filter @levelmaxing/mobile test",
+    "check:sql": "uv run --no-project --python 3.12 --with pglast==7.24 scripts/check-sql-drafts.py"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "typescript": "5.9.3"
+  }
+}

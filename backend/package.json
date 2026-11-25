@@ -1,0 +1,16 @@
+{
+  "name": "@levelmaxing/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env.local --watch src/node.ts",
+    "start": "node --env-file-if-exists=.env.local src/node.ts",
+    "test": "node --test 'test/**/*.test.ts'",
+    "typecheck": "tsc --project tsconfig.json"
+  },
+  "dependencies": {
+    "@levelmaxing/contracts": "workspace:*",
+    "jose": "6.2.16"
+  }
+}

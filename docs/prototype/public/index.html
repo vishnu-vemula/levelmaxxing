@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f5f4ee">
+  <title>Levelmaxing — Training & nutrition</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" type="module"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="shell">
+    <aside class="rail" aria-label="Levelmaxing workspace">
+      <a class="brand" href="#today" aria-label="Levelmaxing Today"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span><span>levelmaxing<span class="brand-dot">.</span></span></a>
+      <nav id="nav" aria-label="Main navigation"></nav>
+      <nav id="mobile-nav" aria-label="Main navigation"></nav>
+      <div class="rail-foot">
+        <button type="button" class="rail-setting" data-do="theme"><span aria-hidden="true">◐</span> Appearance</button>
+        <button type="button" class="profile-chip" data-view="settings"><span class="avatar" aria-hidden="true">A</span><span><strong id="profile-name">Aarav</strong><small>Demo workspace</small></span><span class="rail-chevron" aria-hidden="true">›</span></button>
+      </div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <a class="brand mobile-brand" href="#today" aria-label="Levelmaxing Today"><span class="mark" aria-hidden="true"><i></i><i></i><i></i></span><span>levelmaxing<span class="brand-dot">.</span></span></a>
+        <span id="crumb" class="crumb">Workspace / Today</span>
+        <button id="sync-status" type="button" class="sync-status" data-do="sync-panel"><span class="status-dot"></span><span id="sync-label">Connecting</span></button>
+      </header>
+      <main id="main" tabindex="-1"><h1>Today</h1><p>Opening the demo workspace…</p></main>
+      <footer class="workspace-foot"><span>Levelmaxing prototype</span><span id="device-label">Local workspace</span></footer>
+    </div>
+  </div>
+  <dialog id="dialog" aria-labelledby="dialog-title"><div id="dialog-body"></div></dialog>
+  <div id="notice" role="status" aria-live="polite"></div>
+</body>
+</html>

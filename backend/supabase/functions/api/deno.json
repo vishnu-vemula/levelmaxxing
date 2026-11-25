@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "@levelmaxing/contracts": "../../../../packages/contracts/src/index.ts",
+    "jose": "npm:jose@6.2.16"
+  }
+}

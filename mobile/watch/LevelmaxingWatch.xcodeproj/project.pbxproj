@@ -1,0 +1,191 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		100000000000000000000001 /* LevelmaxingWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000011 /* LevelmaxingWatchApp.swift */; };
+		100000000000000000000002 /* CompanionConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000012 /* CompanionConnection.swift */; };
+		100000000000000000000003 /* LevelmaxingWatchCore in Frameworks */ = {isa = PBXBuildFile; productRef = 100000000000000000000052 /* LevelmaxingWatchCore */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		100000000000000000000011 /* LevelmaxingWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelmaxingWatchApp.swift; sourceTree = "<group>"; };
+		100000000000000000000012 /* CompanionConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanionConnection.swift; sourceTree = "<group>"; };
+		100000000000000000000013 /* LevelmaxingWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = LevelmaxingWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		100000000000000000000014 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		100000000000000000000021 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (100000000000000000000003 /* LevelmaxingWatchCore in Frameworks */,);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		100000000000000000000031 = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000032 /* WatchApp */,
+				100000000000000000000033 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		100000000000000000000032 /* WatchApp */ = {
+			isa = PBXGroup;
+			children = (
+				100000000000000000000011 /* LevelmaxingWatchApp.swift */,
+				100000000000000000000012 /* CompanionConnection.swift */,
+				100000000000000000000014 /* Info.plist */,
+			);
+			path = WatchApp;
+			sourceTree = "<group>";
+		};
+		100000000000000000000033 /* Products */ = {
+			isa = PBXGroup;
+			children = (100000000000000000000013 /* LevelmaxingWatch.app */,);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		100000000000000000000041 /* LevelmaxingWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 100000000000000000000072 /* Target configurations */;
+			buildPhases = (
+				100000000000000000000022 /* Sources */,
+				100000000000000000000021 /* Frameworks */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = LevelmaxingWatch;
+			packageProductDependencies = (100000000000000000000052 /* LevelmaxingWatchCore */,);
+			productName = LevelmaxingWatch;
+			productReference = 100000000000000000000013 /* LevelmaxingWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		100000000000000000000042 /* Project object */ = {
+			isa = PBXProject;
+			attributes = { LastUpgradeCheck = 2720; };
+			buildConfigurationList = 100000000000000000000071 /* Project configurations */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, Base,);
+			mainGroup = 100000000000000000000031;
+			packageReferences = (100000000000000000000051 /* Local package */,);
+			productRefGroup = 100000000000000000000033 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (100000000000000000000041 /* LevelmaxingWatch */,);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		100000000000000000000022 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				100000000000000000000001 /* LevelmaxingWatchApp.swift in Sources */,
+				100000000000000000000002 /* CompanionConnection.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		100000000000000000000051 /* Local package */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ".";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		100000000000000000000052 /* LevelmaxingWatchCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 100000000000000000000051 /* Local package */;
+			productName = LevelmaxingWatchCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+
+/* Begin XCBuildConfiguration section */
+		100000000000000000000061 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				SDKROOT = watchos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		100000000000000000000062 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				SDKROOT = watchos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_VERSION = 6.0;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		100000000000000000000063 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WatchApp/Info.plist;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.levelmaxing.app.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Debug;
+		};
+		100000000000000000000064 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WatchApp/Info.plist;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.levelmaxing.app.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		100000000000000000000071 /* Project configurations */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (100000000000000000000061 /* Debug */, 100000000000000000000062 /* Release */,);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		100000000000000000000072 /* Target configurations */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (100000000000000000000063 /* Debug */, 100000000000000000000064 /* Release */,);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+	};
+	rootObject = 100000000000000000000042 /* Project object */;
+}
