@@ -1,5 +1,5 @@
 import type { Activity, Workout } from '@levelmaxing/contracts';
-import { useRouter } from 'expo-router';
+import { useRouter } from '../../shared/navigation.tsx';
 import { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Action, Card, Field, Notice, Pill, Screen, SectionTitle, useTheme } from '../../shared/ui.tsx';

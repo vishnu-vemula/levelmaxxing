@@ -1,7 +1,6 @@
-import { randomUUID } from 'expo-crypto';
-import type { SQLiteDatabase } from 'expo-sqlite';
+import { randomUUID } from '../../platform/native-storage.ts';
 import type { WeightMeasurement } from '@levelmaxing/contracts';
-import { openCipher } from '../../platform/sqlcipher.ts';
+import { openCipher, type CipherDatabase } from '../../platform/sqlcipher.ts';
 import type { Entry, PendingMeasurement, ProgressStore } from './sync.ts';
 
 type DeviceRow = {
@@ -12,7 +11,7 @@ type DeviceRow = {
   nextSequence: number;
 };
 
-async function readDevice(db: SQLiteDatabase): Promise<DeviceRow> {
+async function readDevice(db: CipherDatabase): Promise<DeviceRow> {
   const row = await db.getFirstAsync<DeviceRow>(
     'SELECT device_id AS deviceId, epoch, generation, cursor, next_seq AS nextSequence FROM sync_state WHERE singleton = 1',
   );
@@ -20,7 +19,7 @@ async function readDevice(db: SQLiteDatabase): Promise<DeviceRow> {
   return row;
 }
 
-async function saveConfirmed(db: SQLiteDatabase, id: string, weight: WeightMeasurement): Promise<void> {
+async function saveConfirmed(db: CipherDatabase, id: string, weight: WeightMeasurement): Promise<void> {
   await db.runAsync(
     'INSERT INTO weight_confirmed (id, grams, day) VALUES (?, ?, ?) ON CONFLICT(id) DO NOTHING',
     [id, weight.grams, weight.measuredOn],

@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useRouter } from '../../shared/navigation.tsx';
 import { Text } from 'react-native';
 import { Action, Card, Mascot, Notice, Screen, SectionTitle, useTheme } from '../../shared/ui.tsx';
 import { useWorkspace } from '../workspace/index.ts';

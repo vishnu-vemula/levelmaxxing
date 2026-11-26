@@ -1,11 +1,17 @@
 {
-  "extends": "expo/tsconfig.base",
+  "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "strict": true,
+    "jsx": "react-jsx",
     "noUncheckedIndexedAccess": true,
     "allowImportingTsExtensions": true,
     "noEmit": true,
-    "types": ["react", "node"]
+    "types": [
+      "react",
+      "node"
+    ]
   },
-  "include": ["src", ".expo/types/**/*.ts", "expo-env.d.ts"]
+  "include": [
+    "src"
+  ]
 }

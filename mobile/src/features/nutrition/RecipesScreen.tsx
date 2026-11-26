@@ -1,5 +1,5 @@
-import { randomUUID } from 'expo-crypto';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { randomUUID } from '../../platform/native-storage.ts';
+import { useLocalSearchParams, useRouter } from '../../shared/navigation.tsx';
 import { useState } from 'react';
 import { Alert, Share, View } from 'react-native';
 import type { NutritionData, Recipe, RecipeIngredient } from '@levelmaxing/contracts';

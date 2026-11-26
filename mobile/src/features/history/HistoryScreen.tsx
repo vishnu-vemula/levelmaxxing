@@ -2,8 +2,8 @@ import {
   parseWorkspaceHistoryKind, WORKSPACE_HISTORY_MOVE_MAX, workspaceHistorySection, type WorkspaceHistoryCursor,
   type WorkspaceHistoryKind, type WorkspaceHistoryMove, type WorkspaceHistoryPage, type WorkspaceHistoryRow,
 } from '@levelmaxing/contracts';
-import { randomUUID } from 'expo-crypto';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { randomUUID } from '../../platform/native-storage.ts';
+import { useLocalSearchParams, useRouter } from '../../shared/navigation.tsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { ApiFailure, createApiRequester } from '../../platform/api.ts';

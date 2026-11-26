@@ -3,6 +3,7 @@ node_modules/
 .local/
 dist/
 .expo/
+/mobile/ios/
 coverage/
 .build/
 DerivedData/
@@ -12,6 +13,7 @@ xcuserdata/
 .env.*
 !.env.example
 .DS_Store
+._*
 docs/prototype/.demo-state/
 
 CLAUDE.local.md

@@ -1,5 +1,5 @@
-import Constants from 'expo-constants';
-import { useRouter } from 'expo-router';
+import { nativeStorage } from '../../platform/native-storage.ts';
+import { useRouter } from '../../shared/navigation.tsx';
 import { useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Action, Card, Mascot, Notice, Pill, Screen, SectionTitle, useTheme } from '../../shared/ui.tsx';
@@ -40,7 +40,7 @@ export function SettingsScreen() {
   const value = profile.value;
   const latest = progress.entries[0];
   const units = value?.units ?? 'kg';
-  const version = Constants.expoConfig?.version;
+  const version = nativeStorage().appVersion;
   const sections = [
     { label: 'Profile', status: profile.status },
     { label: 'Training', status: training.status },

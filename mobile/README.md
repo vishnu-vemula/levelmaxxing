@@ -1,38 +1,24 @@
 # Levelmaxing mobile
 
-Expo SDK 57 and Expo Router provide one native iOS and Android app. The supplied Level Maxing HTML informs the navigation, shared components, mascot and cobalt training, yellow nutrition and green progress surfaces. The app uses native typography and follows system appearance.
+The Android app uses bare React Native 0.86 and the Android project in `mobile/android`. The debug APK embeds the app's JavaScript and assets. The screens, Firebase identity, API contract and account-scoped offline model share the existing feature implementation. The iOS application target and its native storage adapter are pending.
 
-## Run locally
+## Run on a USB-connected Android phone
 
-Install the root workspace dependencies and start the loopback API using the root setup instructions. Copy .env.example to .env.local and set the mobile values for the chosen environment.
-
-| Environment | API base | Authentication |
-| --- | --- | --- |
-| iOS Simulator | http://127.0.0.1:4321 | Set EXPO_PUBLIC_ENABLE_LOCAL_AUTH=1. Sign in with the participant token in the root developer access file. |
-| Android Emulator | http://10.0.2.2:4321 | Same explicit development mode and participant token. |
-| Physical Android over USB | http://127.0.0.1:4321 | Use ADB reverse for the API. Set EXPO_PUBLIC_ENABLE_LOCAL_AUTH=1 and use the locally generated participant token. |
-| Hosted | HTTPS API base. For Edge Functions include the full functions/v1/api prefix. | Set `EXPO_PUBLIC_FIREBASE_API_KEY`, `EXPO_PUBLIC_FIREBASE_PROJECT_ID`, `EXPO_PUBLIC_FIREBASE_APP_ID`, and the Supabase Edge ingress publishable key. Sign in with your Firebase email and password. |
-
-Start Metro with `pnpm --filter @levelmaxing/mobile dev` from the repository root. A native Expo **development build** with SQLCipher and the backup-excluded storage module is required. The Expo Go binary cannot use these paths. Local mode is checked in development only and expects a loopback API. Use synthetic records with the local API. Native provisioning, development signing and any environment setup that could apply schemas remain owner tasks.
-
-### Physical Android over USB
-
-Use the Android SDK platform-tools and a compatible JDK and Android SDK. Enable USB debugging, unlock the phone, and accept the computer's debugging prompt. Confirm that `adb devices` lists the phone as `device`. Select the target explicitly if more than one device is connected.
-
-From the repository root, install frozen dependencies, run `pnpm dev:setup`, and leave `pnpm dev:api` running. Check that `http://127.0.0.1:4321/healthz` returns `200`. In a second PowerShell window run the commands below. Use `adb -s <serial>` instead of `adb` if several devices are attached.
+Use Node 24, the pinned pnpm version, and Android SDK platform-tools. The React Native Gradle plugin uses a Java 17 toolchain, which Gradle can provision. Set up Android SDK Platform 36, Build Tools 36.0.0 and NDK 27.1.12297006. Unlock the phone, enable USB debugging, and accept the authorization prompt. In regular Windows PowerShell from the repository root, run:
 
 ```powershell
-adb reverse tcp:4321 tcp:4321
-adb reverse tcp:8081 tcp:8081
-adb reverse --list
-$env:EXPO_PUBLIC_API_URL = 'http://127.0.0.1:4321'
-$env:EXPO_PUBLIC_ENABLE_LOCAL_AUTH = '1'
-pnpm --filter @levelmaxing/mobile exec expo run:android --device
+powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File .\scripts\android-usb.ps1
 ```
 
-The first development build may generate native project files. Keep generated files and test credentials out of commits. Use the development participant token from `.local/access.env` without printing it in logs. For S01, tap Continue on the first two setup pages, force-stop, reopen, and verify the next page and saved fields. Finish setup, sign out, sign in as the second account, and verify the first account's answers are absent. Then use the same participant account on two installations for the S02 workout and meal checks. [Expo local Android setup](https://docs.expo.dev/get-started/set-up-your-environment/?buildEnv=local&mode=development-build)
+The script installs the locked Node dependencies if needed, builds an APK for the phone's CPU, and verifies the installation through Android's package manager. It starts the synthetic API on Windows port 4321, forwards device port 4321 over USB, and verifies that the app's activity starts and its process stays up. Use the participant token in `.local/access.env` and enter synthetic data. Keep PowerShell open while testing.
 
-To exercise the native journey with synthetic data, sign in and finish onboarding. Activate a program, start a workout, log a set and finish the session. Add a food entry or log one portion of a recipe. Record a weigh-in and today’s check-in. Use **Sync now** in Settings on both installations to compare the same account. Make a change while offline and sync after reconnecting. **More** opens workspace recovery when edits compete. Independent food and journal changes can be combined. Edits to the same record still need a choice. Starting a fresh local API process clears its server memory and can also trigger version review. Weight uses its existing cursor and epoch recovery.
+The debug APK is written to `android/app/build/outputs/apk/debug/app-debug.apk` under the mobile directory. Use Android Studio or run `gradlew.bat :app:assembleDebug` from `mobile/android` to build without installing. The wrapper pins Gradle 9.3.1, which matches the installed React Native plugin's wrapper. [React Native Android setup](https://reactnative.dev/docs/set-up-your-environment) · [Gradle checksums](https://gradle.org/release-checksums/)
+
+To reuse an APK already built in this checkout, add `-SkipBuild` to the USB command. The new APK can open without Metro. Local sign-in and sync use the synthetic API over USB. The script starts Metro and forwards device port 8081 when installing an older APK that needs it or one built with `-PlevelmaxingUseMetro=true` for live JavaScript development.
+
+For manual runs, set `APP_PUBLIC_API_URL` to `http://127.0.0.1:4321` on a USB device or `http://10.0.2.2:4321` on an Android emulator, and set `APP_PUBLIC_ENABLE_LOCAL_AUTH=1`. Run `pnpm dev:setup` and `pnpm dev:api` from the root. In a separate terminal, run `pnpm dev:mobile`. Hosted builds use a full HTTPS API base and the public Firebase and Supabase values described in `.env.example`.
+
+To exercise the native journey with synthetic data, sign in and finish onboarding. Activate a program, start a workout, log a set and finish the session. Add a food entry, record a weigh-in and complete today's check-in. Use **Sync now** in Settings on both installations to compare the same account. Force-stop the app during setup and reopen it to verify progress persisted. Make an offline edit and verify it syncs once the connection returns. Sign out and verify the second account cannot see the first account's data. **More** opens workspace recovery when edits compete.
 
 ## Native screen map
 
@@ -62,7 +48,7 @@ From **Settings**, choose **Export active records and weight**, **Export archive
 
 Use the public app configuration from the same Firebase project configured in the backend, with Email/Password authentication enabled. The backend resolves each verified Firebase UID to a Levelmaxing account UUID. The first binding on each device needs the backend online. After binding, the same authenticated Firebase user can access their encrypted offline entries if the network is temporarily unavailable. The Firebase credential, binding and offline eligibility are encrypted in a vault scoped to the Firebase project, app registration and API base. Explicit access denial or a different UUID reported by the backend locks offline access and preserves the original binding.
 
-The progress database keeps the existing Levelmaxing UUID in its scope. Preserving that UUID and API base lets a user who signs in through Firebase regain access to existing queued entries. Supabase still hosts PostgreSQL and its public API key is used for hosted ingress. Firebase supplies the user identity token. [Expo Firebase setup](https://docs.expo.dev/guides/using-firebase/) · [Firebase ID tokens](https://firebase.google.com/docs/auth/admin/verify-id-tokens)
+The progress database keeps the existing Levelmaxing UUID in its scope. Preserving that UUID and API base lets a user who signs in through Firebase regain access to existing queued entries. Supabase hosts PostgreSQL and its public API key is used for hosted ingress. Firebase supplies the user identity token. [Firebase ID tokens](https://firebase.google.com/docs/auth/admin/verify-id-tokens)
 
 ## Ownership
 
@@ -70,10 +56,10 @@ The progress database keeps the existing Levelmaxing UUID in its scope. Preservi
 - `features/session` owns Firebase Authentication, explicit loopback authentication, account binding, isolation and sign-out.
 - `features/progress` owns measurements, durable pending writes, synchronization and the progress screen.
 - `features/workspace` owns the encrypted section replicas, retry and explicit version recovery. Profile, training, nutrition and journal own the user-facing flows.
-- Session, Progress and Workspace own their API paths and response handling. `platform` supplies the generic request adapter and SQLCipher. The local Expo module supplies the nonpurgeable native directory.
+- Session, Progress and Workspace own their API paths and response handling. `platform` supplies the generic request adapter and SQLCipher. The Android storage module uses the nonpurgeable native directory.
 - `shared` contains reusable presentation primitives. Only public feature entry points cross feature boundaries.
 
-SecureStore holds a native-generated random key. The SQLCipher database is scoped to the environment and account, with a separate encrypted session vault. Android uses the app's no-backup directory. iOS explicitly verifies backup exclusion on Application Support before opening a database. A missing module or encryption support prevents opening a plaintext database. Sign-out hides account-scoped storage and preserves queued entries for the same account.
+The SQLCipher database is scoped to the environment and account, with a separate encrypted session vault. Android uses the no-backup directory and Android Keystore. The storage bridge keeps the existing encrypted filenames and key format. An unavailable key or missing encryption fails closed. Sign-out hides account-scoped storage and preserves queued entries for the same account.
 
 ## Verification
 
@@ -82,8 +68,7 @@ Run the following from the repository root. They inspect or bundle code without 
 ```sh
 pnpm --filter @levelmaxing/mobile typecheck
 pnpm --filter @levelmaxing/mobile test
-EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 pnpm --filter @levelmaxing/mobile validate:config
-EXPO_OFFLINE=1 EXPO_NO_TELEMETRY=1 pnpm --filter @levelmaxing/mobile bundle
+pnpm bundle:mobile
 ```
 
 Native SQLCipher startup, device backup behavior, large text rendering, physical two-device sync and live Firebase sign-in require a development build and approved test environment. The unit tests use injected storage and transport for the local sync and Firebase account binding paths. The [delivery ledger](../docs/engineering/delivery-status.md) tracks the provider and release flows.

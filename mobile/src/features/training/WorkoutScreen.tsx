@@ -1,6 +1,6 @@
 import type { LoggedSet, Workout, WorkoutExercise } from '@levelmaxing/contracts';
-import { randomUUID } from 'expo-crypto';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { randomUUID } from '../../platform/native-storage.ts';
+import { useLocalSearchParams, useRouter } from '../../shared/navigation.tsx';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { dateKey } from '../../shared/local-date.ts';

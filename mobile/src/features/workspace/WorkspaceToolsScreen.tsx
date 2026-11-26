@@ -1,5 +1,5 @@
 import type { WorkspaceSection } from '@levelmaxing/contracts';
-import { useRouter } from 'expo-router';
+import { useRouter } from '../../shared/navigation.tsx';
 import { useState } from 'react';
 import { Alert } from 'react-native';
 import { Action, Card, Notice, Screen, SectionTitle } from '../../shared/ui.tsx';

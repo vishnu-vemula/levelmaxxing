@@ -1,4 +1,4 @@
-import { randomUUID } from 'expo-crypto';
+import { randomUUID } from './platform/native-storage.ts';
 import { createProgressTransport, openProgressStore } from './features/progress/index.ts';
 import { createAuth, readEnvironment, type AuthEnvironment } from './features/session/index.ts';
 import { createWorkspaceTransport, openWorkspaceStore } from './features/workspace/index.ts';

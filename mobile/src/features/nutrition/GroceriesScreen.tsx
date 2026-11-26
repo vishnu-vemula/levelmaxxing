@@ -1,5 +1,5 @@
-import { randomUUID } from 'expo-crypto';
-import { useRouter } from 'expo-router';
+import { randomUUID } from '../../platform/native-storage.ts';
+import { useRouter } from '../../shared/navigation.tsx';
 import { useState } from 'react';
 import { Alert, Share, Switch, View } from 'react-native';
 import type { Grocery } from '@levelmaxing/contracts';

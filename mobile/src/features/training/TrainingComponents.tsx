@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useRouter } from '../../shared/navigation.tsx';
 import { type PropsWithChildren, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Action, Card, Field, Notice, Pill, SectionTitle, useTheme } from '../../shared/ui.tsx';

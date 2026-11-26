@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useRouter } from '../../shared/navigation.tsx';
 import { Action, Card, Mascot, Screen, SectionTitle } from '../../shared/ui.tsx';
 
 export default function Add() {

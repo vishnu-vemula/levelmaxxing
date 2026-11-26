@@ -1,0 +1,83 @@
+apply plugin: "com.android.application"
+apply plugin: "org.jetbrains.kotlin.android"
+apply plugin: "com.facebook.react"
+
+def mobileRoot = rootDir.parentFile
+def useMetro = providers.gradleProperty('levelmaxingUseMetro').map { it.toBoolean() }.getOrElse(false)
+def resolvePackage = { name ->
+    new File(providers.exec {
+        workingDir(mobileRoot)
+        commandLine("node", "--print", "require.resolve('${name}/package.json', { paths: [require.resolve('react-native/package.json')] })")
+    }.standardOutput.asText.get().trim()).parentFile
+}
+
+react {
+    root = mobileRoot
+    debuggableVariants = useMetro ? ['debug'] : []
+    entryFile = new File(mobileRoot, "index.js")
+    reactNativeDir = resolvePackage("react-native")
+    codegenDir = resolvePackage("@react-native/codegen")
+    hermesCommand = new File(resolvePackage("hermes-compiler"), "hermesc/%OS-BIN%/hermesc").absolutePath
+    cliFile = new File(mobileRoot, "scripts/metro.cjs")
+    autolinkLibrariesWithApp()
+}
+
+android {
+    namespace "org.levelmaxing.app"
+    compileSdk rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+    ndkVersion rootProject.ext.ndkVersion
+    buildFeatures { buildConfig = true }
+
+    defaultConfig {
+        applicationId "org.levelmaxing.app"
+        minSdk rootProject.ext.minSdkVersion
+        targetSdk rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "0.1.0"
+        buildConfigField "boolean", "USE_METRO", "false"
+    }
+
+    signingConfigs {
+        debug {
+            storeFile file("debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+            buildConfigField "boolean", "USE_METRO", useMetro.toString()
+        }
+    }
+}
+
+if (!useMetro) {
+    androidComponents.onVariants(androidComponents.selector().withBuildType('debug')) {
+        // Local sign-in uses the JavaScript development flag even when the bundle is embedded.
+        tasks.named('createBundleDebugJsAndAssets', com.facebook.react.tasks.BundleHermesCTask) {
+            devEnabled.set(true)
+        }
+    }
+}
+
+tasks.withType(com.facebook.react.tasks.BundleHermesCTask).configureEach {
+    inputs.files(new File(mobileRoot, '.env.local'), new File(mobileRoot, 'babel.config.cjs'), new File(mobileRoot, 'metro.config.cjs'))
+    ['API_URL', 'ENABLE_LOCAL_AUTH', 'FIREBASE_API_KEY', 'FIREBASE_PROJECT_ID', 'FIREBASE_APP_ID',
+        'SUPABASE_PUBLISHABLE_KEY'].each { key ->
+        ['APP_PUBLIC_', 'EXPO_PUBLIC_'].each { prefix ->
+            def name = "${prefix}${key}"
+            inputs.property(name, providers.environmentVariable(name).orElse(''))
+        }
+    }
+}
+
+dependencies {
+    implementation("com.facebook.react:react-android")
+    implementation("com.facebook.react:hermes-android")
+    implementation("net.zetetic:sqlcipher-android:4.20.0")
+    implementation("androidx.sqlite:sqlite:2.7.0")
+}

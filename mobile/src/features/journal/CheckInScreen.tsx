@@ -1,6 +1,6 @@
-import { useRouter } from 'expo-router';
+import { useRouter } from '../../shared/navigation.tsx';
 import type { CheckIn } from '@levelmaxing/contracts';
-import { randomUUID } from 'expo-crypto';
+import { randomUUID } from '../../platform/native-storage.ts';
 import { useRef, useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import { Action, Card, Field, Notice, Pill, Screen, SectionTitle, useTheme } from '../../shared/ui.tsx';

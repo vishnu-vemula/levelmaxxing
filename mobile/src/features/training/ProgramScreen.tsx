@@ -1,6 +1,6 @@
 import type { PlanExercise, Program, TrainingDay } from '@levelmaxing/contracts';
-import { randomUUID } from 'expo-crypto';
-import { useRouter } from 'expo-router';
+import { randomUUID } from '../../platform/native-storage.ts';
+import { useRouter } from '../../shared/navigation.tsx';
 import { useRef, useState } from 'react';
 import { View } from 'react-native';
 import { useWorkspace } from '../workspace/index.ts';

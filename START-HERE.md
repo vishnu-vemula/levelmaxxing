@@ -4,7 +4,7 @@ This workspace contains the initialized release codebase, the complete app desig
 
 | Path | Role |
 |---|---|
-| [Mobile](mobile/README.md) | Top-level Expo Router app for iOS/Android with Firebase Auth and account-scoped secure storage |
+| [Mobile](mobile/README.md) | Bare React Native Android app with Firebase Auth and account-scoped secure storage |
 | [API](backend/README.md) | Top-level TypeScript modular monolith with injected Firebase verification, Postgres sync and transport adapters |
 | [Admin](backend/admin/README.md) | React and Vite operator access, MFA flow and API service status |
 | [Watch](mobile/watch/README.md) | SwiftUI watchOS target, Swift Package model and receive-side WatchConnectivity boundary |
@@ -33,7 +33,7 @@ In another terminal, start the console:
 VITE_LEVELMAXING_AUTH_MODE=local pnpm dev:admin
 ```
 
-Open [the operator console](http://127.0.0.1:5173) and use the local operator credential. Mobile uses an Expo **development build** with SQLCipher included. Follow the [mobile setup](mobile/README.md) for platform-specific loopback and build steps. Use synthetic data until the production storage and privacy review is complete.
+Open [the operator console](http://127.0.0.1:5173) and use the local operator credential. The Android development build includes SQLCipher. Follow the [mobile setup](mobile/README.md) for USB, Metro and build steps. Use synthetic data until the production storage and privacy review is complete.
 
 ## Production boundary
 

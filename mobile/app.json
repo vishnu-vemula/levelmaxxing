@@ -1,22 +1,4 @@
 {
-  "expo": {
-    "name": "Levelmaxing",
-    "slug": "levelmaxing",
-    "scheme": "levelmaxing",
-    "version": "0.1.0",
-    "userInterfaceStyle": "automatic",
-    "ios": {
-      "bundleIdentifier": "org.levelmaxing.app",
-      "supportsTablet": true
-    },
-    "android": {
-      "package": "org.levelmaxing.app",
-      "allowBackup": false
-    },
-    "plugins": [
-      "expo-router",
-      ["expo-sqlite", { "useSQLCipher": true }],
-      ["expo-secure-store", { "configureAndroidBackup": true }]
-    ]
-  }
+  "name": "Levelmaxing",
+  "displayName": "Levelmaxing"
 }

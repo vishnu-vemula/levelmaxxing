@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useRouter } from '../../shared/navigation.tsx';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Action, Card, Mascot, Notice, Pill, ProgressBar, Screen, SectionTitle, useTheme } from '../../shared/ui.tsx';
 import { formatWeight, todayLocal, useProgress } from '../progress/index.ts';

@@ -3,3 +3,10 @@ packages:
   - backend/admin
   - mobile
   - packages/*
+
+# Keep generated Android C++ dependencies within the Windows Ninja path limit.
+virtualStoreDirMaxLength: 36
+
+ignoredBuiltDependencies:
+  - '@firebase/util'
+  - protobufjs

@@ -1,6 +1,6 @@
 import {parseWorkspaceHistoryKind, type WorkspaceHistoryCursor, type WorkspaceHistoryKind} from '@levelmaxing/contracts';
-import {randomUUID} from 'expo-crypto';
-import {useLocalSearchParams, useRouter} from 'expo-router';
+import {randomUUID} from '../../platform/native-storage.ts';
+import {useLocalSearchParams, useRouter} from '../../shared/navigation.tsx';
 import {useEffect, useRef, useState} from 'react';
 import {Alert, Share} from 'react-native';
 import {ApiFailure, createApiRequester, type ApiRequester} from '../../platform/api.ts';

@@ -2,7 +2,7 @@ import {
   libraryCategories, listBundledGuides, MAX_LIBRARY_QUERY_CHARS, readBundledGuide,
   type LibraryCategory, type LibraryDetail, type LibraryPage, type LibraryQuery,
 } from '@levelmaxing/contracts';
-import { useRouter } from 'expo-router';
+import { useRouter } from '../../shared/navigation.tsx';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { createApiRequester } from '../../platform/api.ts';

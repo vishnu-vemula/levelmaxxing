@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { test } from 'node:test';
-import type { WorkspaceSection } from '@levelmaxing/contracts';
+import type { WorkspaceSection } from '../packages/contracts/src/index.ts';
 import { createLocalApp } from '../backend/src/local.ts';
 import { emptyProfile, onboardingStep, profileAfterStep } from '../mobile/src/features/profile/onboarding.ts';
 import { createWorkspaceTransport } from '../mobile/src/features/workspace/api.ts';

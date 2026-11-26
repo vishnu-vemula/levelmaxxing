@@ -2,13 +2,13 @@
 
 [Start here](../../START-HERE.md) · [Full architecture](../product/02-production-architecture.md) · [Product design](../product/03-product-design.md) · [Release status](delivery-status.md)
 
-The repository implements the first slice of the full release. The app-facing behavior is an append-only weight log with durable local capture and an account-scoped, versioned export of committed observations. This establishes the sync boundary used later by workouts, meals and other offline commands. Repo setup uses Expo, React, TypeScript, Supabase and SwiftUI because those runtimes meet the platform requirements while keeping one shared mobile client, one cloud write authority and a small operations footprint. [Expo monorepos](https://docs.expo.dev/guides/monorepos/) · [Expo SQLite](https://docs.expo.dev/versions/latest/sdk/sqlite/) · [Supabase Edge Functions](https://supabase.com/docs/guides/functions)
+The repository implements the first slice of the full release. The app-facing behavior is an append-only weight log with durable local capture and an account-scoped, versioned export of committed observations. This establishes the sync boundary used later by workouts, meals and other offline commands. Repo setup uses React Native, Metro, TypeScript, Supabase and SwiftUI. [React Native native platform](https://reactnative.dev/docs/native-platform) · [Supabase Edge Functions](https://supabase.com/docs/guides/functions)
 
 ## Dependency direction
 
 ```mermaid
 flowchart LR
-  Phone["Expo client · Today / Progress / Settings"] --> NativeStore["Account-scoped SQLCipher"]
+  Phone["React Native client · Today / Progress / Settings"] --> NativeStore["Account-scoped SQLCipher"]
   Phone --> API["/v1 HTTP contract"]
   Admin["React admin · access / service health"] --> API
   Watch["SwiftUI + WatchConnectivity receiver"] -. "Phone sender is a later slice" .-> Phone
@@ -23,7 +23,7 @@ flowchart LR
 ```
 
 - **Backend.** Feature code under `backend/src/features` owns validation, state or authorization for its business boundary. `app.ts` composes HTTP routes through narrow typed dependencies. Local and cloud roots inject identity, persistence and the cursor codec. Node and Edge read hosted settings through one configuration reader with runtime-specific key precedence. The Node HTTP shim translates requests into the Fetch API. Supabase Edge calls the same cloud composition root.
-- **Mobile.** File-based routes host feature UI and providers. Session owns the authenticated account and secured auth state. Progress owns the durable confirmed view, queued intents, device enrollment and retry. The account route composes Firebase sign-in, the encrypted store, the ID generator and authenticated transport. Feature adapters own their routes, and Expo SQLite, SecureStore and generic HTTP sit at platform boundaries.
+- **Mobile.** A typed route table hosts feature UI and providers. Session owns the authenticated account and secured auth state. Progress owns the durable confirmed view, queued intents, device enrollment and retry. The account route composes Firebase sign-in, the encrypted store, the ID generator and authenticated transport. Android Keystore, SQLCipher and generic HTTP sit at platform boundaries.
 - **Admin.** Access and service health are independent features. The Vite proxy gives localhost the same request path used behind a production same-origin proxy. A backend role and level-two authentication bind access. The operator surface never reads user health values.
 - **Watch.** SwiftUI consumes watch-side companion state. Monotonic binding/session rules and deadline logic live in a separately testable package. Phone-side dispatch, rebinding across phones and hardware validation are full-release slices.
 - **Shared.** TypeScript apps share wire types, runtime parsers, ordered receipt correlation and product palette roles. Swift uses explicit compact platform payloads. The import harness detects cross-app dependencies, private feature imports, generic platform imports of feature modules, and direct use of shared package sources.

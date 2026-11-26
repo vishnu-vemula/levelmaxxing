@@ -1,0 +1,29 @@
+pluginManagement {
+    def plugin = providers.exec {
+        workingDir(rootDir)
+        commandLine("node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })")
+    }.standardOutput.asText.get().trim()
+    includeBuild(new File(plugin).parentFile.absolutePath)
+}
+
+plugins { id("com.facebook.react.settings") }
+
+extensions.configure(com.facebook.react.ReactSettingsExtension) { settings ->
+    settings.autolinkLibrariesFromCommand(
+        ["node", "scripts/android-autolink.cjs"],
+        rootDir.parentFile,
+        settings.settings.layout.rootDirectory.dir("../").files(
+            "package.json", "scripts/android-autolink.cjs", "../pnpm-lock.yaml",
+            "../pnpm-workspace.yaml", "../node_modules/.modules.yaml"
+        )
+    )
+}
+
+rootProject.name = "Levelmaxing"
+include(":app")
+
+def reactNativeGradlePlugin = providers.exec {
+    workingDir(rootDir)
+    commandLine("node", "--print", "require.resolve('@react-native/gradle-plugin/package.json', { paths: [require.resolve('react-native/package.json')] })")
+}.standardOutput.asText.get().trim()
+includeBuild(new File(reactNativeGradlePlugin).parentFile.absolutePath)

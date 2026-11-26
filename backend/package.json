@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node --env-file-if-exists=.env.local --watch src/node.ts",
     "start": "node --env-file-if-exists=.env.local src/node.ts",
-    "test": "node --test 'test/**/*.test.ts'",
+    "test": "node --test \"test/**/*.test.ts\"",
     "typecheck": "tsc --project tsconfig.json"
   },
   "dependencies": {

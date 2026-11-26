@@ -1,14 +1,11 @@
 import type { WorkspaceHistoryKind } from '@levelmaxing/contracts';
-import { CryptoDigestAlgorithm, digestStringAsync } from 'expo-crypto';
-import * as SecureStore from 'expo-secure-store';
+import { nativeStorage, sha256 } from '../../platform/native-storage.ts';
 import { createPendingHistoryStore } from './pending.ts';
-
-const options = { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY };
 
 export function createNativeHistoryStore(scope: string, kind: WorkspaceHistoryKind) {
   let id: Promise<string> | undefined;
   async function key() {
-    id ??= digestStringAsync(CryptoDigestAlgorithm.SHA256, JSON.stringify([scope, kind]))
+    id ??= sha256(JSON.stringify([scope, kind]))
       .then((digest) => `lm.history-move.${digest}`)
       .catch((error: unknown) => {
         id = undefined;
@@ -17,8 +14,8 @@ export function createNativeHistoryStore(scope: string, kind: WorkspaceHistoryKi
     return id;
   }
   return createPendingHistoryStore(key, kind, {
-    read: (key) => SecureStore.getItemAsync(key, options),
-    write: (key, value) => SecureStore.setItemAsync(key, value, options),
-    remove: (key) => SecureStore.deleteItemAsync(key, options),
+    read: (key) => nativeStorage().readSecret(key),
+    write: (key, value) => nativeStorage().writeSecret(key, value),
+    remove: (key) => nativeStorage().deleteSecret(key),
   });
 }

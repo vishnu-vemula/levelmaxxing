@@ -15,9 +15,8 @@ import {
   type User,
 } from 'firebase/auth';
 import { isUuid, objectValue } from '@levelmaxing/contracts';
-import type { SQLiteDatabase } from 'expo-sqlite';
 import { createApiRequester } from '../../platform/api.ts';
-import { openCipher } from '../../platform/sqlcipher.ts';
+import { openCipher, type CipherDatabase } from '../../platform/sqlcipher.ts';
 import { resolveAccountSession } from './api.ts';
 import { firebaseVaultScope, interruption, resolveFirebaseSession, type AuthStorage, type Session } from './firebase-session.ts';
 
@@ -39,18 +38,18 @@ function safeURL(raw: string | undefined): URL | null {
 }
 
 export function readEnvironment(): AuthEnvironment | null {
-  const api = safeURL(process.env.EXPO_PUBLIC_API_URL);
-  const publishableKey = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const api = safeURL(process.env.APP_PUBLIC_API_URL);
+  const publishableKey = process.env.APP_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!api) return null;
   const base = api.href.endsWith('/') ? api.href : `${api.href}/`;
   const loopback = ['localhost', '127.0.0.1', '[::1]', '10.0.2.2'].includes(api.hostname);
-  if (__DEV__ && process.env.EXPO_PUBLIC_ENABLE_LOCAL_AUTH === '1' && loopback &&
+  if (__DEV__ && process.env.APP_PUBLIC_ENABLE_LOCAL_AUTH === '1' && loopback &&
       (api.protocol === 'http:' || api.protocol === 'https:')) {
     return { api: base, mode: 'local' };
   }
-  const apiKey = process.env.EXPO_PUBLIC_FIREBASE_API_KEY;
-  const projectId = process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID;
-  const appId = process.env.EXPO_PUBLIC_FIREBASE_APP_ID;
+  const apiKey = process.env.APP_PUBLIC_FIREBASE_API_KEY;
+  const projectId = process.env.APP_PUBLIC_FIREBASE_PROJECT_ID;
+  const appId = process.env.APP_PUBLIC_FIREBASE_APP_ID;
   if (api.protocol === 'https:' && !loopback && publishableKey?.startsWith('sb_publishable_') &&
     apiKey && /^[A-Za-z0-9_-]+$/.test(apiKey) && projectId && /^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(projectId) &&
     appId && /^1:\d+:(?:web|android|ios):[A-Za-z0-9]+$/.test(appId)) {
@@ -70,9 +69,9 @@ export interface AuthGateway {
   foreground(enabled: boolean): void;
 }
 
-const vaults = new Map<string, Promise<SQLiteDatabase>>();
+const vaults = new Map<string, Promise<CipherDatabase>>();
 function authStorage(scope: string): AuthStorage {
-  async function db(): Promise<SQLiteDatabase> {
+  async function db(): Promise<CipherDatabase> {
     let flight = vaults.get(scope);
     if (!flight) {
       flight = (async () => {

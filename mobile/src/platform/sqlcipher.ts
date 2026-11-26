@@ -1,52 +1,65 @@
-import { requireOptionalNativeModule } from 'expo';
-import * as SQLite from 'expo-sqlite';
-import * as SecureStore from 'expo-secure-store';
-import { digestStringAsync, CryptoDigestAlgorithm, getRandomBytesAsync } from 'expo-crypto';
+import { nativeStorage, sha256, type SqlValue } from './native-storage.ts';
 
-const secureOptions = { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY };
-const keyCreation = new Map<string, Promise<string>>();
+type Arguments = SqlValue[] | [SqlValue[]];
+const leases = new Map<string, Promise<void>>();
 
-async function getKey(id: string): Promise<string> {
-  const existing = await SecureStore.getItemAsync(id, secureOptions);
-  if (existing !== null) return existing;
-  const random = await getRandomBytesAsync(32);
-  const key = Array.from(random, (byte) => byte.toString(16).padStart(2, '0')).join('');
-  await SecureStore.setItemAsync(id, key, secureOptions);
-  return key;
+function values(args: Arguments): SqlValue[] {
+  return Array.isArray(args[0]) ? args[0] : args as SqlValue[];
 }
 
-async function installationKey(id: string): Promise<string> {
-  const pending = keyCreation.get(id);
-  if (pending) return pending;
-  const created = getKey(id);
-  keyCreation.set(id, created);
-  try {
-    return await created;
-  } finally {
-    keyCreation.delete(id);
+export interface CipherDatabase {
+  execAsync(sql: string): Promise<void>;
+  runAsync(sql: string, ...args: Arguments): Promise<void>;
+  getAllAsync<T>(sql: string, ...args: Arguments): Promise<T[]>;
+  getFirstAsync<T>(sql: string, ...args: Arguments): Promise<T | null>;
+  withTransactionAsync(body: () => Promise<void>): Promise<void>;
+  closeAsync(): Promise<void>;
+}
+
+export async function openCipher(store: 'session' | 'progress' | 'workspace', scope: string): Promise<CipherDatabase> {
+  const storage = nativeStorage();
+  const namespace = `lm.${store}.${await sha256(scope)}`;
+  // A fast account switch may start opening before the old store finishes its last transaction.
+  const previous = leases.get(namespace) ?? Promise.resolve();
+  let unlock!: () => void;
+  const done = new Promise<void>(resolve => { unlock = resolve; });
+  const lease = previous.then(() => done);
+  leases.set(namespace, lease);
+  function release() {
+    unlock();
+    if (leases.get(namespace) === lease) leases.delete(namespace);
   }
-}
-
-export async function openCipher(store: 'session' | 'progress' | 'workspace', scope: string): Promise<SQLite.SQLiteDatabase> {
-  const hash = await digestStringAsync(CryptoDigestAlgorithm.SHA256, scope);
-  const namespace = `lm.${store}.${hash}`;
-  const storage = requireOptionalNativeModule<{ directory(): Promise<string> }>('LevelmaxingPrivateStorage');
-  if (!storage) throw new Error('This build requires backup-excluded native storage.');
-  const directory = await storage.directory();
-  const db = await SQLite.openDatabaseAsync(`${namespace}.sqlite`, { useNewConnection: true }, directory);
+  await previous;
+  let connection: string;
   try {
-    const encryption = await db.getFirstAsync<Record<string, string>>('PRAGMA cipher_version');
-    if (!encryption || !Object.values(encryption).some(Boolean)) {
-      throw new Error('This build requires SQLCipher.');
-    }
-    const key = await installationKey(namespace);
-    if (!/^[0-9a-f]{64}$/.test(key)) throw new Error('Invalid device encryption key.');
-    // SQLCipher requires a literal for PRAGMA key. The hex key is OS-generated and validated above.
-    await db.execAsync(`PRAGMA key = "x'${key}'";`);
-    await db.getFirstAsync('SELECT name FROM sqlite_master LIMIT 1');
-    return db;
+    connection = await storage.open(namespace);
   } catch (error) {
-    await db.closeAsync();
+    release();
     throw error;
   }
+  let closing: Promise<void> | undefined;
+  const execute = async (sql: string) => {
+    // This method receives static schema and transaction statements. Bound values use runAsync.
+    for (const statement of sql.split(';').map(part => part.trim()).filter(Boolean)) {
+      await storage.execute(connection, statement);
+    }
+  };
+  return {
+    execAsync: execute,
+    runAsync: (sql, ...args) => storage.run(connection, sql, values(args)),
+    getAllAsync: async <T>(sql: string, ...args: Arguments) => (await storage.query(connection, sql, values(args))) as T[],
+    getFirstAsync: async <T>(sql: string, ...args: Arguments) =>
+      ((await storage.query(connection, sql, values(args)))[0] as T | undefined) ?? null,
+    async withTransactionAsync(body) {
+      await execute('BEGIN IMMEDIATE');
+      try {
+        await body();
+        await execute('COMMIT');
+      } catch (error) {
+        await execute('ROLLBACK');
+        throw error;
+      }
+    },
+    closeAsync: () => closing ??= storage.close(connection).finally(release),
+  };
 }
